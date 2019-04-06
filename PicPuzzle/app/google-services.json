@@ -1,0 +1,44 @@
+{
+  "project_info": {
+    "project_number": "1026670389975",
+    "firebase_url": "https://picpuzzle.firebaseio.com",
+    "project_id": "picpuzzle",
+    "storage_bucket": "picpuzzle.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1026670389975:android:6698c71f78154c63",
+        "android_client_info": {
+          "package_name": "com.example.picpuzzle"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1026670389975-l92jsgqfa8hkvetgkrnn7au45guv0gt2.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.picpuzzle",
+            "certificate_hash": "7026dd140b04cec838340945e3e38f821c635da3"
+          }
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCsb6SWbZpQxQKkohv4bOr3HhY7pz6BFJo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1026670389975-msnlnfteesp2iggg3q8mptksq2jsvcqi.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
