@@ -5,4 +5,5 @@
     <string name="mainMenu1">Select stock image</string>
     <string name="mainMenu2">Add image from gallery</string>
     <string name="mainMenu3">Take image wth camera</string>
+    <string name="title_activity_stock_list">stock_list</string>
 </resources>
