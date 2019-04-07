@@ -9,11 +9,14 @@ import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+
+import static java.sql.DriverManager.println;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -24,6 +27,18 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        Button next = (Button) findViewById(R.id.next);
+        next.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View view) {
+                Intent myIntent = new Intent(view.getContext(), chunkImage.class);
+                startActivity(myIntent);
+                Intent intent = new Intent();
+                setResult(RESULT_OK, intent);
+                finish();
+            }
+
+        });
     }
 
     // this method will be invoked when the user chooses to select a stock image
@@ -50,6 +65,7 @@ public class MainActivity extends AppCompatActivity {
         // we will invoke this activity and get something back from it
         startActivityForResult(photoPickerIntent, IMAGE_GALLERY_REQUEST);
     }
+
 
 /*    @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data){
