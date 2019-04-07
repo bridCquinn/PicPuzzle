@@ -1,201 +1,160 @@
 package com.android.pic;
 
-import java.util.List;
-
-import org.opencv.android.BaseLoaderCallback;
-import org.opencv.android.CameraBridgeViewBase.CvCameraViewFrame;
-import org.opencv.android.LoaderCallbackInterface;
-import org.opencv.android.OpenCVLoader;
-import org.opencv.core.Core;
-import org.opencv.core.CvType;
-import org.opencv.core.Mat;
-import org.opencv.core.MatOfPoint;
-import org.opencv.core.Rect;
-import org.opencv.core.Scalar;
-import org.opencv.core.Size;
-import org.opencv.android.CameraBridgeViewBase;
-import org.opencv.android.CameraBridgeViewBase.CvCameraViewListener2;
-import org.opencv.imgproc.Imgproc;
-
-import android.app.Activity;
+import android.content.Intent;
+import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
-import android.view.MotionEvent;
+import android.os.Environment;
+import android.provider.MediaStore;
+import android.support.v7.app.AppCompatActivity;
 import android.view.View;
-import android.view.Window;
-import android.view.WindowManager;
-import android.view.View.OnTouchListener;
-import android.view.SurfaceView;
+import android.widget.Button;
+import android.widget.Toast;
 
-public class MainActivity extends Activity implements OnTouchListener, CvCameraViewListener2 {
-    private static final String  TAG              = "MainActivity";
+import org.opencv.core.Scalar;
 
-    private boolean              mIsColorSelected = false;
-    private Mat                  mRgba;
-    private Scalar               mBlobColorRgba;
-    private Scalar               mBlobColorHsv;
-    private ColorBlobDetector    mDetector;
-    private Mat                  mSpectrum;
-    private Size                 SPECTRUM_SIZE;
-    private Scalar               CONTOUR_COLOR;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import android.media.Image;
+import java.net.URL;
 
-    private CameraBridgeViewBase mOpenCvCameraView;
 
-    private BaseLoaderCallback  mLoaderCallback = new BaseLoaderCallback(this) {
-        @Override
-        public void onManagerConnected(int status) {
-            switch (status) {
-                case LoaderCallbackInterface.SUCCESS:
+public class MainActivity extends AppCompatActivity {
+
+    public static final int IMAGE_GALLERY_REQUEST = 20;
+
+    private static ImageColourAnalysis ICA = new ImageColourAnalysis();
+
+    private static final int SIDE_LEN = 10;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+    }
+
+    // this method will be invoked when the user chooses to select a stock image
+    public void onStockImageClicked(View v){
+        Button mainButton1 = (Button) v;
+//        startActivity(new Intent(getApplicationContext(), stock_list.class));
+    }
+
+    // this method will be invoked when the user chooses to select image from gallery
+    public void onImageGalleryClicked(View v){
+        // invoke the image gallery using an implicit intent
+        Intent photoPickerIntent = new Intent(Intent.ACTION_PICK);
+
+        // where do we want to find the data?
+        File pictureDirectory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
+        String pictureDirectoryPath = pictureDirectory.getPath();
+
+        // finally, get a URI representation
+        Uri data = Uri.parse(pictureDirectoryPath);
+
+        // set the data and type. get all image types
+        photoPickerIntent.setDataAndType(data, "image/*");
+
+        // we will invoke this activity and get something back from it
+        startActivityForResult(photoPickerIntent, IMAGE_GALLERY_REQUEST);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data){
+        if (resultCode == RESULT_OK){
+            // if we are here, everything processed successfully
+            if (requestCode == IMAGE_GALLERY_REQUEST){
+                // if we are here, we are hearing back from the image gallery
+                // the address of the image on the SD card
+                Uri imageUri = data.getData();
+//                // declare a stream to read the image data from the SD card
+//                InputStream inputStream;
+//                // we are getting an input stream, based on the URI of the image
+//                try {
+//                    inputStream = getContentResolver().openInputStream(imageUri);
+//                    // get a bitmap from the stream
+//                    Bitmap image = BitmapFactory.decodeStream(inputStream);
+//                } catch (FileNotFoundException e) {
+//                    e.printStackTrace();
+//                    // show a message to the user indicating that the image is unavailable
+//                    Toast.makeText(this, "Unable to open image", Toast.LENGTH_LONG.show());
+//                }
+                Bitmap.Config conf = Bitmap.Config.ARGB_8888;
+                Bitmap img = Bitmap.createBitmap(SIDE_LEN, SIDE_LEN, conf);
+                try {
+                    Bitmap bmp = getBitmapFromLocalPath(getRealPathFromURI(imageUri),1);
+                    //Bitmap bmp = BitmapFactory.decodeStream(new BufferedInputStream(new URL(imageUri.toString()).openConnection().connect().getInputStream()));
+                    int xOffset = bmp.getWidth() / 2 - (SIDE_LEN / 2);
+                    int yOffset = bmp.getHeight() / 2 - (SIDE_LEN / 2);
+                    for(int x = 0; x < SIDE_LEN; x++)
+                    {
+                        for(int y = 0; y < SIDE_LEN; y++)
+                        {
+                            img.setPixel(x,y, bmp.getPixel(x + xOffset, y + yOffset));
+                        }
+                    }
+                }
+                catch (Exception e)
                 {
-                    Log.i(TAG, "OpenCV loaded successfully");
-                    mOpenCvCameraView.enableView();
-                    mOpenCvCameraView.setOnTouchListener(MainActivity.this);
-                } break;
-                default:
+                    e.printStackTrace();
+                }
+
+                float R = 0, G = 0, B = 0;
+                for(int x = 0; x < SIDE_LEN; x++)
                 {
-                    super.onManagerConnected(status);
-                } break;
+                    for(int y = 0; y < SIDE_LEN; y++)
+                    {
+                        R += ((img.getPixel(x, y) >> 16) & 0xff) / (double)(SIDE_LEN * SIDE_LEN);
+                        G += ((img.getPixel(x, y) >>  8) & 0xff) / (double)(SIDE_LEN * SIDE_LEN);
+                        B += ((img.getPixel(x, y) >>  0) & 0xff) / (double)(SIDE_LEN * SIDE_LEN);
+                    }
+                }
+
+                Color avg = Color.valueOf(R, G, B);
+                //Scalar colour = ICA.getRGB(imageUri,500);
+
+                System.out.println("Colour is: "+avg.toString());
             }
         }
-    };
-
-    public MainActivity() {
-        Log.i(TAG, "Instantiated new " + this.getClass());
     }
 
-    /** Called when the activity is first created. */
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        Log.i(TAG, "called onCreate");
-        super.onCreate(savedInstanceState);
-        requestWindowFeature(Window.FEATURE_NO_TITLE);
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-
-//        setContentView(R.layout.color_blob_detection_surface_view);
-        setContentView(R.layout.activity_main);
-
-        mOpenCvCameraView = (CameraBridgeViewBase) findViewById(R.id.color_blob_detection_activity_surface_view);
-        mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
-        mOpenCvCameraView.setCvCameraViewListener(this);
-    }
-
-    @Override
-    public void onPause()
+    /**
+     *
+     * @param path
+     * @param sampleSize 1 = 100%, 2 = 50%(1/2), 4 = 25%(1/4), ...
+     * @return
+     */
+    public static Bitmap getBitmapFromLocalPath(String path, int sampleSize)
     {
-        super.onPause();
-        if (mOpenCvCameraView != null)
-            mOpenCvCameraView.disableView();
+        try
+        {
+            BitmapFactory.Options options = new BitmapFactory.Options();
+            options.inSampleSize = sampleSize;
+            return BitmapFactory.decodeFile(path, options);
+        }
+        catch(Exception e)
+        {
+            //  Logger.e(e.toString());
+        }
+
+        return null;
     }
 
-    @Override
-    public void onResume()
-    {
-        super.onResume();
-        if (!OpenCVLoader.initDebug()) {
-            Log.d(TAG, "Internal OpenCV library not found. Using OpenCV Manager for initialization");
-            OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_11, this, mLoaderCallback);
+    private String getRealPathFromURI(Uri contentURI) {
+        String result;
+        Cursor cursor = getContentResolver().query(contentURI, null, null, null, null);
+        if (cursor == null) { // Source is Dropbox or other similar local file path
+            result = contentURI.getPath();
         } else {
-            Log.d(TAG, "OpenCV library found inside package. Using it!");
-            mLoaderCallback.onManagerConnected(LoaderCallbackInterface.SUCCESS);
+            cursor.moveToFirst();
+            int idx = cursor.getColumnIndex(MediaStore.Images.ImageColumns.DATA);
+            result = cursor.getString(idx);
+            cursor.close();
         }
-    }
-
-    public void onDestroy() {
-        super.onDestroy();
-        if (mOpenCvCameraView != null)
-            mOpenCvCameraView.disableView();
-    }
-
-    public void onCameraViewStarted(int width, int height) {
-        mRgba = new Mat(height, width, CvType.CV_8UC4);
-        mDetector = new ColorBlobDetector();
-        mSpectrum = new Mat();
-        mBlobColorRgba = new Scalar(255);
-        mBlobColorHsv = new Scalar(255);
-        SPECTRUM_SIZE = new Size(200, 64);
-        CONTOUR_COLOR = new Scalar(255,0,0,255);
-    }
-
-    public void onCameraViewStopped() {
-        mRgba.release();
-    }
-
-    public boolean onTouch(View v, MotionEvent event) {
-        int cols = mRgba.cols();
-        int rows = mRgba.rows();
-
-        int xOffset = (mOpenCvCameraView.getWidth() - cols) / 2;
-        int yOffset = (mOpenCvCameraView.getHeight() - rows) / 2;
-
-        int x = (int)event.getX() - xOffset;
-        int y = (int)event.getY() - yOffset;
-
-        Log.i(TAG, "Touch image coordinates: (" + x + ", " + y + ")");
-
-        if ((x < 0) || (y < 0) || (x > cols) || (y > rows)) return false;
-
-        Rect touchedRect = new Rect();
-
-        touchedRect.x = (x>4) ? x-4 : 0;
-        touchedRect.y = (y>4) ? y-4 : 0;
-
-        touchedRect.width = (x+4 < cols) ? x + 4 - touchedRect.x : cols - touchedRect.x;
-        touchedRect.height = (y+4 < rows) ? y + 4 - touchedRect.y : rows - touchedRect.y;
-
-        Mat touchedRegionRgba = mRgba.submat(touchedRect);
-
-        Mat touchedRegionHsv = new Mat();
-        Imgproc.cvtColor(touchedRegionRgba, touchedRegionHsv, Imgproc.COLOR_RGB2HSV_FULL);
-
-        // Calculate average color of touched region
-        mBlobColorHsv = Core.sumElems(touchedRegionHsv);
-        int pointCount = touchedRect.width*touchedRect.height;
-        for (int i = 0; i < mBlobColorHsv.val.length; i++)
-            mBlobColorHsv.val[i] /= pointCount;
-
-        mBlobColorRgba = converScalarHsv2Rgba(mBlobColorHsv);
-
-        Log.i(TAG, "Touched rgba color: (" + mBlobColorRgba.val[0] + ", " + mBlobColorRgba.val[1] +
-                ", " + mBlobColorRgba.val[2] + ", " + mBlobColorRgba.val[3] + ")");
-
-        mDetector.setHsvColor(mBlobColorHsv);
-
-//        Imgproc.resize(mDetector.getSpectrum(), mSpectrum, SPECTRUM_SIZE, 0, 0, Imgproc.INTER_LINEAR_EXACT);
-        Imgproc.resize(mDetector.getSpectrum(), mSpectrum, SPECTRUM_SIZE, 0, 0, Imgproc.INTER_LINEAR);
-
-        mIsColorSelected = true;
-
-        touchedRegionRgba.release();
-        touchedRegionHsv.release();
-
-        return false; // don't need subsequent touch events
-    }
-
-    public Mat onCameraFrame(CvCameraViewFrame inputFrame) {
-        mRgba = inputFrame.rgba();
-
-        if (mIsColorSelected) {
-            mDetector.process(mRgba);
-            List<MatOfPoint> contours = mDetector.getContours();
-            Log.e(TAG, "Contours count: " + contours.size());
-            Imgproc.drawContours(mRgba, contours, -1, CONTOUR_COLOR);
-
-            Mat colorLabel = mRgba.submat(4, 68, 4, 68);
-            colorLabel.setTo(mBlobColorRgba);
-            System.out.println("mBlobColorRgba: "+(mBlobColorRgba.toString()));
-
-            Mat spectrumLabel = mRgba.submat(4, 4 + mSpectrum.rows(), 70, 70 + mSpectrum.cols());
-            mSpectrum.copyTo(spectrumLabel);
-        }
-
-        return mRgba;
-    }
-
-    private Scalar converScalarHsv2Rgba(Scalar hsvColor) {
-        Mat pointMatRgba = new Mat();
-        Mat pointMatHsv = new Mat(1, 1, CvType.CV_8UC3, hsvColor);
-        Imgproc.cvtColor(pointMatHsv, pointMatRgba, Imgproc.COLOR_HSV2RGB_FULL, 4);
-
-        return new Scalar(pointMatRgba.get(0, 0));
+        return result;
     }
 }

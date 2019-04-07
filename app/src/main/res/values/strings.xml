@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">PicPuzzle2</string>
+    <string name="hello_world">Tap me if you dare!</string>
+    <string name="tapme">Tap Me!</string>
+    <string name="mainMenu1">Select stock image</string>
+    <string name="mainMenu2">Add image from gallery</string>
+    <string name="mainMenu3">Take image wth camera</string>
 </resources>
