@@ -40,20 +40,20 @@ public class chunkImage extends Activity {
 //        }
 //
         ImageView imageView= (ImageView) findViewById(R.id.imageView2);
-        imageView.setImageResource(R.drawable.sunset);
+        imageView.setImageResource(R.drawable.scoobydoo);
 
-        Button upload = (Button) findViewById(R.id.upload);
-        upload.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View view) {
-//                 checks if the image matches the amount of color
+//        Button upload = (Button) findViewById(R.id.upload);
+//        upload.setOnClickListener(new View.OnClickListener() {
+//            public void onClick(View view) {
+////                 checks if the image matches the amount of color
+////
+////                 uploads and replaces a tile with the image
+////                 needs to take path of gallery photo
+////                imageView.setImageResource(R.drawable.new_image);
+////
+//            }
 //
-//                 uploads and replaces a tile with the image
-//                 needs to take path of gallery photo
-//                imageView.setImageResource(R.drawable.new_image);
-//
-            }
-
-        });
+//        });
 
 
         Button submit = (Button) findViewById(R.id.submit);
